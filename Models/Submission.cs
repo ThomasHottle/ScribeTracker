@@ -30,5 +30,8 @@ namespace ScribeTracker.Models
         // Navigation
         public Work Work { get; set; } = null!;
         public Market Market { get; set; } = null!;
+
+        [Display(Name = "Self-Published")]
+        public bool SelfPub { get; set; } = false;
     }
 }

@@ -28,17 +28,13 @@ namespace ScribeTracker.Controllers
         // GET: PenNames/Details/5
         public async Task<IActionResult> Details(int? id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
+            if (id == null) return NotFound();
 
             var penName = await _context.PenNames
+                .Include(p => p.Works)
                 .FirstOrDefaultAsync(m => m.PenNameId == id);
-            if (penName == null)
-            {
-                return NotFound();
-            }
+
+            if (penName == null) return NotFound();
 
             return View(penName);
         }

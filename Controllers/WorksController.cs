@@ -29,18 +29,15 @@ namespace ScribeTracker.Controllers
         // GET: Works/Details/5
         public async Task<IActionResult> Details(int? id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
+            if (id == null) return NotFound();
 
             var work = await _context.Works
                 .Include(w => w.PenName)
+                .Include(w => w.Submissions)
+                    .ThenInclude(s => s.Market)
                 .FirstOrDefaultAsync(m => m.WorkId == id);
-            if (work == null)
-            {
-                return NotFound();
-            }
+
+            if (work == null) return NotFound();
 
             return View(work);
         }

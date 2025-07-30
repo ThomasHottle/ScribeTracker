@@ -10,25 +10,50 @@
     <h4>Work</h4>
     <hr />
     <dl class="row">
-        <dt class = "col-sm-2">
+        <dt class="col-sm-2">
             @Html.DisplayNameFor(model => model.Title)
         </dt>
-        <dd class = "col-sm-10">
+        <dd class="col-sm-10">
             @Html.DisplayFor(model => model.Title)
         </dd>
-        <dt class = "col-sm-2">
+        <dt class="col-sm-2">
             @Html.DisplayNameFor(model => model.Type)
         </dt>
-        <dd class = "col-sm-10">
+        <dd class="col-sm-10">
             @Html.DisplayFor(model => model.Type)
         </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.PenName)
+        <dt class="col-sm-2">
+            Pen Name
         </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.PenName.PenNameId)
+        <dd class="col-sm-10">
+            <a asp-controller="PenNames" asp-action="Details" asp-route-id="@Model.PenNameId">
+                @Model.PenName?.Name
+            </a>
         </dd>
     </dl>
+</div>
+
+<!-- Submissions List -->
+<div>
+    <h4>Submissions</h4>
+    @if (Model.Submissions != null && Model.Submissions.Any())
+    {
+        <ul>
+            @foreach (var submission in Model.Submissions)
+            {
+                <li>
+                    <a asp-controller="Submissions" asp-action="Details" asp-route-id="@submission.SubmissionId">
+                        Submitted to @submission.Market?.Name on @submission.SubmissionDate.ToShortDateString()
+                        (@submission.Status)
+                    </a>
+                </li>
+            }
+        </ul>
+    }
+    else
+    {
+        <p>No submissions for this work.</p>
+    }
 </div>
 <div>
     <a asp-action="Edit" asp-route-id="@Model?.WorkId">Edit</a> |
