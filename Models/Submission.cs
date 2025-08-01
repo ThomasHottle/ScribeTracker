@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace ScribeTracker.Models
 {
@@ -21,8 +22,8 @@ namespace ScribeTracker.Models
 
         public DateTime SubmissionDate { get; set; }
         public SubmissionStatus Status { get; set; } = SubmissionStatus.Submitted;
-        
-        [DataType(DataType.Currency)]
+
+        [Column(TypeName = "decimal(18,2)")]
         [Display(Name = "Payment Received")] 
         public decimal? Payment { get; set; }
         public string? Notes { get; set; }

@@ -1,10 +1,19 @@
-﻿namespace ScribeTracker.Models
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace ScribeTracker.Models
 {
     public enum WorkType
     {
+        [Display(Name = "Article")]
         Article,
+
+        [Display(Name = "Short Story")]
         ShortStory,
+
+        [Display(Name = "Novel")]
         Novel,
+
+        [Display(Name = "Novella")]
         Novella
     }
 

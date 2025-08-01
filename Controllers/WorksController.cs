@@ -62,7 +62,8 @@ namespace ScribeTracker.Controllers
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
-            ViewData["PenNameId"] = new SelectList(_context.PenNames, "PenNameId", "PenNameId", work.PenNameId);
+
+            ViewData["PenNameId"] = new SelectList(_context.PenNames, "PenNameId", "Name", work.PenNameId);
             return View(work);
         }
 
