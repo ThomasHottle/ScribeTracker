@@ -1,12 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using ScribeTracker.Data;
 using ScribeTracker.Models;
+using ScribeTracker.ViewModels;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace ScribeTracker.Controllers
 {
@@ -22,8 +23,11 @@ namespace ScribeTracker.Controllers
         // GET: Works
         public async Task<IActionResult> Index()
         {
-            var scribeContext = _context.Works.Include(w => w.PenName);
-            return View(await scribeContext.ToListAsync());
+            var works = await _context.Works
+                .Include(w => w.PenName) // This is key
+                .ToListAsync();
+
+            return View(works);
         }
 
         // GET: Works/Details/5
@@ -45,26 +49,67 @@ namespace ScribeTracker.Controllers
         // GET: Works/Create
         public IActionResult Create()
         {
-            ViewData["PenNameId"] = new SelectList(_context.PenNames, "PenNameId", "PenNameId");
-            return View();
+            var penNames = _context.PenNames
+         .Select(p => new SelectListItem
+         {
+             Value = p.PenNameId.ToString(),
+             Text = p.Name
+         }).ToList();
+
+            penNames.Insert(0, new SelectListItem { Value = "", Text = "-- Select Pen Name --" });
+
+            var workTypes = Enum.GetValues(typeof(WorkType))
+                .Cast<WorkType>()
+                .Select(wt => new SelectListItem
+                {
+                    Value = ((int)wt).ToString(),
+                    Text = wt.ToString()
+                }).ToList();
+
+            workTypes.Insert(0, new SelectListItem { Value = "", Text = "-- Select Work Type --" });
+
+            var viewModel = new WorkPenNameViewModel
+            {
+                PenNames = penNames,
+                WorkTypes = workTypes
+            };
+
+            return View(viewModel);
+
         }
+
+
 
         // POST: Works/Create
         // To protect from overposting attacks, enable the specific properties you want to bind to.
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("WorkId,Title,Type,PenNameId")] Work work)
+        public IActionResult Create(WorkPenNameViewModel vm)
         {
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid)
             {
-                _context.Add(work);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
+                vm.PenNames = _context.PenNames
+                    .Select(p => new SelectListItem
+                    {
+                        Value = p.PenNameId.ToString(),
+                        Text = p.Name
+                    }).ToList();
+
+                return View(vm);
             }
 
-            ViewData["PenNameId"] = new SelectList(_context.PenNames, "PenNameId", "Name", work.PenNameId);
-            return View(work);
+            var work = new Work
+            {
+                Title = vm.Title,
+                Type = vm.Type,
+                PenNameId = vm.PenNameId
+            };
+
+            _context.Works.Add(work);
+            _context.SaveChanges();
+
+            return RedirectToAction(nameof(Index));
         }
 
         // GET: Works/Edit/5
@@ -80,8 +125,28 @@ namespace ScribeTracker.Controllers
             {
                 return NotFound();
             }
-            ViewData["PenNameId"] = new SelectList(_context.PenNames, "PenNameId", "PenNameId", work.PenNameId);
-            return View(work);
+
+            var viewModel = new WorkPenNameViewModel
+            {
+                Title = work.Title,
+                Type = work.Type,
+                PenNameId = work.PenNameId,
+                PenNames = await _context.PenNames
+                    .Select(p => new SelectListItem
+                    {
+                        Value = p.PenNameId.ToString(),
+                        Text = p.PenNameId.ToString() // Or use p.DisplayName if available
+                    }).ToListAsync(),
+                WorkTypes = Enum.GetValues(typeof(WorkType))
+                    .Cast<WorkType>()
+                    .Select(wt => new SelectListItem
+                    {
+                        Value = ((int)wt).ToString(),
+                        Text = wt.ToString()
+                    }).ToList()
+            };
+
+            return View(viewModel);
         }
 
         // POST: Works/Edit/5
@@ -89,35 +154,57 @@ namespace ScribeTracker.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("WorkId,Title,Type,PenNameId")] Work work)
+        public async Task<IActionResult> Edit(int id, WorkPenNameViewModel model)
         {
-            if (id != work.WorkId)
+            if (!ModelState.IsValid)
+            {
+                // Repopulate dropdowns before returning view
+                model.PenNames = await _context.PenNames
+                    .Select(p => new SelectListItem
+                    {
+                        Value = p.PenNameId.ToString(),
+                        Text = p.PenNameId.ToString() // Or p.DisplayName
+                    }).ToListAsync();
+
+                model.WorkTypes = Enum.GetValues(typeof(WorkType))
+                    .Cast<WorkType>()
+                    .Select(wt => new SelectListItem
+                    {
+                        Value = ((int)wt).ToString(),
+                        Text = wt.ToString()
+                    }).ToList();
+
+                return View(model);
+            }
+
+            var workToUpdate = await _context.Works.FindAsync(id);
+            if (workToUpdate == null)
             {
                 return NotFound();
             }
 
-            if (ModelState.IsValid)
+            // Map ViewModel to entity
+            workToUpdate.Title = model.Title;
+            workToUpdate.Type = model.Type;
+            workToUpdate.PenNameId = model.PenNameId;
+
+            try
             {
-                try
-                {
-                    _context.Update(work);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!WorkExists(work.WorkId))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
+                _context.Update(workToUpdate);
+                await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
-            ViewData["PenNameId"] = new SelectList(_context.PenNames, "PenNameId", "PenNameId", work.PenNameId);
-            return View(work);
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!WorkExists(id))
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
+            }
         }
 
         // GET: Works/Delete/5
